@@ -1,13 +1,35 @@
 // eslint-disable-next-line no-unused-vars
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 // PropTypes ens permet validar les propietats que reben els components
 import PropTypes from 'prop-types';
 import { v4 as uuidv4 } from 'uuid';
 
-const Form = (props) => {
+const Form = ({
+  edicioEstudiant,
+  handleUpdateStudent,
+  handleAddEstudiant,
+  cancelEdit,
+  ...props
+}) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+
+  // Estem en mode edició o afegint un nou estudiant?
+  // Amb el useEffect, podem disparar una funció cada vegada que canvïi una propietat, en aquest cas edicioEstudiant
+  useEffect(() => {
+    if (edicioEstudiant) {
+      // Si tenim edicioEstudiant, estem en mode d'edició; omplim els camps amb les dades
+      setFirstName(edicioEstudiant.fname);
+      setLastName(edicioEstudiant.lname);
+      setEmail(edicioEstudiant.email);
+    } else {
+      // Si no tenim edicioEstudiant, estem afegint un nou estudiant; resetejem els camps
+      setFirstName('');
+      setLastName('');
+      setEmail('');
+    }
+  }, [edicioEstudiant]);
 
   const handleInputReset = () => {
     setFirstName('');
@@ -15,18 +37,31 @@ const Form = (props) => {
     setEmail('');
   };
 
-  // handle click event of submit/edit button
-  const handleClick = (event) => {
-    event.preventDefault(); // Evitar el refresc de la pàgina
-    const id = uuidv4(); // Genera un ID únic
-    props.handleAddEstudiant({
-      key: id,
-      fname: firstName,
-      lname: lastName,
-      programa: props.tipusEstudiantSelect,
-      email: email,
-    });
-    props.setPlacesDisponibles(props.placesActuals - 1);
+  const handleSubmit = (event) => {
+    event.preventDefault();
+
+    if (edicioEstudiant) {
+      // Mode d'edició: actualitzem l'estudiant existent
+      handleUpdateStudent({
+        ...edicioEstudiant,
+        fname: firstName,
+        lname: lastName,
+        email: email,
+      });
+    } else {
+      // Mode d'afegir: afegim un nou estudiant
+      const nouEstudiant = {
+        key: uuidv4(), // Genera un nou ID únic
+        fname: firstName,
+        lname: lastName,
+        programa: props.tipusEstudiantSelect,
+        email: email,
+      };
+      handleAddEstudiant(nouEstudiant);
+      props.setPlacesDisponibles(props.placesActuals - 1);
+    }
+
+    // Buidem els camps en acabar
     handleInputReset();
   };
 
@@ -38,7 +73,11 @@ const Form = (props) => {
 
   return (
     <div className="flex w-3/4 justify-center">
-      <form className="enrolForm w-2/3" name="enrolForm">
+      <form
+        className="enrolForm w-2/3"
+        name="enrolForm"
+        onSubmit={handleSubmit}
+      >
         <ul className="ulEnrol flex w-full flex-col items-stretch">
           <li className="mb-2">
             <input
@@ -74,12 +113,20 @@ const Form = (props) => {
             <input
               className="mb-4 rounded bg-blue-500 p-2 px-4 py-2 font-bold text-white hover:bg-blue-700"
               type="submit"
-              name="Enrol"
-              alt="Enrol"
-              value="Inscripció"
-              onClick={handleClick}
+              value={edicioEstudiant ? 'Desar' : 'Inscripció'}
             />
           </li>
+          {edicioEstudiant && (
+            <li className="self-center">
+              <button
+                type="button"
+                className="mb-4 rounded bg-gray-500 p-2 px-4 py-2 font-bold text-white hover:bg-gray-700"
+                onClick={cancelEdit}
+              >
+                Cancel·lar
+              </button>
+            </li>
+          )}
         </ul>
       </form>
     </div>
@@ -89,11 +136,18 @@ const Form = (props) => {
 // Validem les propietats que rep el component
 // Amb PropTypes definim el tipus de dades que s'esperen i si són obligatòries o no
 Form.propTypes = {
+  edicioEstudiant: PropTypes.shape({
+    fname: PropTypes.string,
+    lname: PropTypes.string,
+    email: PropTypes.string,
+  }),
+  handleUpdateStudent: PropTypes.func.isRequired,
+  handleAddEstudiant: PropTypes.func.isRequired,
+  cancelEdit: PropTypes.func.isRequired,
   setPlacesDisponibles: PropTypes.func.isRequired,
   placesActuals: PropTypes.number.isRequired,
   setDetallsEstudiant: PropTypes.func.isRequired,
   tipusEstudiantSelect: PropTypes.string.isRequired,
-  handleAddEstudiant: PropTypes.func.isRequired,
 };
 
 export default Form;

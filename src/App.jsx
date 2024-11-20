@@ -9,6 +9,7 @@ const App = () => {
   const [ngPlaces, setNGPlaces] = useState(60);
   const [gPlaces, setGPlaces] = useState(40);
   const [detallsEstudiant, setDetallsEstudiant] = useState([]);
+  const [edicioEstudiant, setEdicioEstudiant] = useState(null);
 
   const handleChange = (e) => {
     setTipusEstudiant(e.target.value);
@@ -20,11 +21,35 @@ const App = () => {
       : setNGPlaces(updatedPlaces);
   };
 
+  //CRUD operations
   const handleAddEstudiant = (nouEstudiant) => {
     setDetallsEstudiant((anteriorEstudiants) => [
       ...anteriorEstudiants,
       nouEstudiant,
     ]);
+  };
+
+  const handleDelete = (id, program) => {
+    const newItems = detallsEstudiant.filter((item) => item.key !== id);
+    setDetallsEstudiant(newItems); // Actualitza l'estat de `App`
+    restaurarPlaces(program); // Restaurar el nombre de places disponibles per al programa
+  };
+
+  const handleEditStudent = (student) => {
+    setEdicioEstudiant(student); // Estableix l'estudiant que es vol editar
+  };
+
+  const handleUpdateStudent = (updatedStudent) => {
+    setDetallsEstudiant((anteriorEstudiants) =>
+      anteriorEstudiants.map((student) =>
+        student.key === updatedStudent.key ? updatedStudent : student,
+      ),
+    );
+    setEdicioEstudiant(null); // Sortir del mode d’edició
+  };
+
+  const cancelEdit = () => {
+    setEdicioEstudiant(null); // Sortir del mode d’edició
   };
 
   const restaurarPlaces = (pgm) => {
@@ -75,11 +100,14 @@ const App = () => {
         setPlacesDisponibles={setPlacesDisponibles}
         placesActuals={tipusEstudiant === 'Graduat' ? gPlaces : ngPlaces}
         handleAddEstudiant={handleAddEstudiant}
+        edicioEstudiant={edicioEstudiant}
+        handleUpdateStudent={handleUpdateStudent}
+        cancelEdit={cancelEdit}
       />
       <StudentList
         detallsEstudiant={detallsEstudiant}
-        setDetallsEstudiant={setDetallsEstudiant}
-        restaurarPlaces={restaurarPlaces}
+        onEditStudent={handleEditStudent}
+        onDeleteStudent={handleDelete}
       />
     </div>
   );
